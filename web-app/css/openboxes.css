@@ -68,6 +68,11 @@ a.button:hover {
     color: white;
 }
 
+a.disabled {
+    pointer-events: none;
+    cursor: default;
+}
+
 
 h1 {
     font-weight: normal;
@@ -315,7 +320,6 @@ th a:link, th a:visited, th a:hover {
     display: block;
     font-size: 10px;
     text-decoration: none;
-    width: 100%;
 }
 th.asc a, th.desc a {
     background-position: right;
@@ -643,6 +647,12 @@ textarea, select {
     margin:0;
 }
 
+
+textarea, input.large {
+    width: 100%;
+}
+
+
 /*
 input[type=submit] {
 	background-color: #ccc;
@@ -902,6 +912,9 @@ button.action-btn, button.previous, button.next {
 .capitalize {
     text-transform: capitalize;
 }
+.uppercase {
+    text-transform: uppercase;
+}
 
 .red {
     background-color: red;
@@ -984,13 +997,13 @@ button.action-btn, button.previous, button.next {
     border-left: 3px solid lightgrey;
 }
 .border-right {
-    border-right: 3px solid lightgrey;
+    border-right: 1px solid lightgrey;
 }
 .border-left {
-    border-left: 3px solid lightgrey;
+    border-left: 1px solid lightgrey;
 }
 .border-top {
-    border-top: 3px solid lightgrey;
+    border-top: 1px solid lightgrey;
 }
 
 .credit { color: green; }
@@ -1203,8 +1216,7 @@ body {
 .widget-large { border: 1px solid lightgrey; margin: 5px; }
 .widget-small { border: 1px solid lightgrey;  margin: 5px; }
 .widget-header { background-color: #FFF; margin: 1px; font-weight: bold; font-size: 110%;}
-.widget-content { margin: 10px; }
-
+.widget-content { margin: 5px; }
 .widget-content tr { height: 30px; }
 .widget-content td,th { vertical-align: middle; }
 img {
@@ -1224,23 +1236,24 @@ a:hover {
 }
 
 #chooseLocation {
-    width: 700px;
+    width: 800px;
     position: absolute;
     top: 100px;
     left: 50%;
-    margin-left: -350px;
+    margin-left: -400px;
 }
 #chooseLocationSelect {
     max-height: 400px;
     overflow: auto;
+    margin-bottom: 5px
 }
 
 #loginForm {
-    width:400px;
+    width:500px;
     position: absolute;
     top: 20%;
     left: 50%;
-    margin-left: -225px;
+    margin-left: -250px;
 }
 
 #loginContainer {
@@ -1259,11 +1272,11 @@ a:hover {
 }
 
 #signupForm {
-    width:500px;
+    width:700px;
     position: absolute;
-    top: 15%;
+    top: 5%;
     left: 50%;
-    margin-left: -250px;
+    margin-left: -350px;
 }
 
 
@@ -2113,7 +2126,7 @@ img.photo_tiny {
     background: transparent;
     border: none;
 }
-#transactionLogTabs .ui-widget-header {
+#transactionLogTabs > .ui-widget-header {
     background: transparent;
     border: none;
     border-bottom: 1px solid #c0c0c0;
@@ -2144,7 +2157,7 @@ img.photo_tiny {
 }
 
 
-.tabs .ui-widget-header {
+.tabs > .ui-widget-header {
     background: transparent;
     border: none;
     border-bottom: 1px solid #c0c0c0;
@@ -2152,6 +2165,8 @@ img.photo_tiny {
     -webkit-border-radius: 0px;
     border-radius: 0px;
 }
+
+
 /*
 .tabs .ui-state-default {
 	background: transparent;
@@ -2186,7 +2201,7 @@ img.photo_tiny {
     -moz-border-radius: 4px;
     -webkit-border-radius: 4px;
     border-radius: 4px;
-    width: 300px;
+    width: 400px;
 }
 
 .tag {
@@ -2218,6 +2233,7 @@ img.photo_tiny {
 .lotNumber { font-family: "Courier New"; vertical-align: middle; text-transform: uppercase; }
 .binLocation { font-family: "Courier New"; vertical-align: middle; text-transform: uppercase; }
 .barcode { font-family: "Courier New"; vertical-align: middle; text-transform: uppercase; letter-spacing: .1em; font-weight: normal; font-size: 11px; line-height: 20px}
+.barcode-data { text-align: center; }
 .genericName { text-transform: uppercase; }
 #more { background-color: #ddd; padding: 10px; }
 
@@ -2231,6 +2247,14 @@ div.right{
 div.clear {
     clear: both;
 }
+
+/* =============================================================================
+    jquery ui customization
+   ========================================================================== */
+
+.ui-buttonset { margin: 7px; }
+.ui-buttonset .ui-button { margin-left: 1px; margin-right: -.3px; padding-left: 5px; padding-right: 5px; }
+
 
 /* =============================================================================
    requisition.css
@@ -3050,4 +3074,33 @@ input {
 
 .childContainer .tag {
     margin-left: 25px;
+}
+
+.new-container {
+    border-top: 2px solid #ddd;
+}
+
+.packing-unit {
+   background-color: #f7f7f7;
+
+}
+
+.dont-break-out {
+
+    /* These are technically the same, but use both */
+    overflow-wrap: break-word;
+    word-wrap: break-word;
+
+    -ms-word-break: break-all;
+    /* This is the dangerous one in WebKit, as it breaks things wherever */
+    word-break: break-all;
+    /* Instead use this non-standard one: */
+    word-break: break-word;
+
+    /* Adds a hyphen where the word breaks, if supported (No Blink) */
+    -ms-hyphens: auto;
+    -moz-hyphens: auto;
+    -webkit-hyphens: auto;
+    hyphens: auto;
+
 }

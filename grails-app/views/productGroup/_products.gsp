@@ -4,6 +4,7 @@
         <tr class="">
             <th><warehouse:message code="product.productCode.label"/></th>
             <th><warehouse:message code="product.label"/></th>
+            <th><warehouse:message code="category.label"/></th>
             <th><warehouse:message code="product.unitOfMeasure.label"/></th>
             <th><warehouse:message code="product.manufacturer.label"/></th>
             <th><warehouse:message code="product.vendor.label"/></th>
@@ -22,15 +23,18 @@
                     </g:link>
                 </td>
                 <td class="middle">
+                    <format:category category="${product?.category}"/>
+                </td>
+                <td class="middle">
                     ${product.unitOfMeasure }
                 </td>
                 <td class="middle">
                     ${product.manufacturer }
-                    <div class="fade">${product?.manufacturerCode }</div>
+                    <span class="fade">${product?.manufacturerCode }</span>
                 </td>
                 <td class="middle">
                     ${product.vendor }
-                    <div class="fade">${product?.vendorCode }</div>
+                    <span class="fade">${product?.vendorCode }</span>
                 </td>
                 <td class="middle">
                     <g:link controller="product" action="edit" id="${product.id}" class="button icon edit">
@@ -58,10 +62,8 @@
                                   update="products" onSuccess="onSuccess(data,textStatus)" onComplete="onComplete()"
                                   url="[controller: 'productGroup', action:'addProductToProductGroup']">
                         <input name="id" type="hidden" value="${productGroup?.id}" />
-                        <%--
-                        <input id="product" type="text" name="product" value="" size="80" class="medium text"/>
-                        --%>
-                        <g:autoSuggest id="product" name="product" jsonUrl="${request.contextPath }/json/findProductByName" width="500" styleClass="text"/>
+                        <g:autoSuggest id="product" name="product" jsonUrl="${request.contextPath }/json/findProductByName" width="500" styleClass="text"
+                                       placeholder="${g.message(code:'productGroup.addProduct.label')}"/>
                         <button  class="button icon add">${warehouse.message(code:'default.button.add.label')}</button>
                     </g:formRemote>
                 </td>

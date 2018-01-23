@@ -22,6 +22,8 @@ class Location implements Comparable<Location>, java.io.Serializable {
 	
 	String id
 	String name
+	String locationNumber
+
 	byte [] logo				// logo
 	Address address
 	String fgColor	= "000000"
@@ -40,14 +42,14 @@ class Location implements Comparable<Location>, java.io.Serializable {
 	Date dateCreated;
 	Date lastUpdated;
 
-	
 	static belongsTo = [ parentLocation : Location ]
 	static hasMany = [ locations : Location, supportedActivities : String, employees: User  ]
-		
+
 	static constraints = {
 		name(nullable:false, blank: false, maxSize: 255)
 		address(nullable:true)
 		locationType(nullable:false)
+        locationNumber(nullable:true, unique: true)
 		locationGroup(nullable:true)
 		parentLocation(nullable:true)
 		bgColor(nullable:true, validator: {bgColor, obj ->
@@ -73,7 +75,7 @@ class Location implements Comparable<Location>, java.io.Serializable {
 		cache true
 	}
 	
-	static transients = ["transactions", "events", "shipments", "requests", "orders" ]
+	static transients = ["transactions", "events", "shipments", "requests", "orders"]
 	
 	List getTransactions() { return Transaction.findAllByDestinationOrSource(this,this) }
 	List getEvents() { return Event.findAllByEventLocation(this) }
@@ -120,20 +122,81 @@ class Location implements Comparable<Location>, java.io.Serializable {
 		return supportsActivity;
 
 	}
-	
+
+	/**
+	 * Indicates whether this location requires outbound quantity validation.
+	 *
+	 * @return
+	 */
+	Boolean requiresOutboundQuantityValidation() {
+		return active && local && isWarehouse()
+	}
+
+    /**
+     * @return true if location is a warehouse (depot)
+     *
+     * @deprecated use {@link #isDepot()} instead.
+     */
+    @Deprecated
 	Boolean isWarehouse() {
-        //return locationType.id == LocationType.findById(Constants.WAREHOUSE_LOCATION_TYPE_ID).id
-        return supports(ActivityCode.MANAGE_INVENTORY)
+        return locationType.locationTypeCode == LocationTypeCode.DEPOT ||
+                // FIXME Keep for backwards compatibility or until we migrate all locations
+                supports(ActivityCode.MANAGE_INVENTORY)
     }
 
+
+    /**
+     * @return true is location is a ward or pharmacy
+     */
+    @Deprecated
     Boolean isWardOrPharmacy() {
-        return (locationType.description in ["Pharmacy", "Ward"])
+        return (locationType.locationTypeCode in [LocationTypeCode.DISPENSARY, LocationTypeCode.WARD] ||
+				// FIXME Keep for backwards compatibility or until we migrate all locations
+				locationType.description in ["Pharmacy", "Ward"])
     }
 
+    /**
+     * @return true if location is a depot, ward, or pharmacy
+     */
+    @Deprecated
     Boolean isDepotWardOrPharmacy(){
-      return  (locationType.description in ["Depot", "Pharmacy", "Ward"])
+      return  (locationType.locationTypeCode in [LocationTypeCode.DEPOT, LocationTypeCode.DISPENSARY, LocationTypeCode.WARD] ||
+			  // FIXME Keep for backwards compatibility or until we migrate all locations
+			  locationType.description in ["Depot", "Pharmacy", "Ward"])
     }
 
+    Boolean isDepot() {
+        return locationType.locationTypeCode == LocationTypeCode.DEPOT
+    }
+
+    Boolean isWard() {
+        return locationType.locationTypeCode == LocationTypeCode.WARD
+    }
+
+    Boolean isDispensary() {
+        return locationType.locationTypeCode == LocationTypeCode.DISPENSARY
+    }
+
+    Boolean isBinLocation() {
+        return locationType.locationTypeCode == LocationTypeCode.BIN_LOCATION
+    }
+
+    Boolean isSupplier() {
+        return locationType.locationTypeCode == LocationTypeCode.SUPPLIER
+    }
+
+    Boolean isDonor() {
+        return locationType.locationTypeCode == LocationTypeCode.DONOR
+    }
+
+    Boolean isVirtual() {
+        return locationType.locationTypeCode == LocationTypeCode.VIRTUAL
+    }
+
+    /**
+     * @return all physical locations
+     */
+    @Deprecated
     static AllDepotWardAndPharmacy(){
       Location.list().findAll{ it.isDepotWardOrPharmacy()}.sort{it.name}
     }

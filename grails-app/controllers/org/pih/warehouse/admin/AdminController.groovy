@@ -12,8 +12,17 @@ package org.pih.warehouse.admin
 import grails.util.GrailsUtil
 import org.codehaus.groovy.grails.commons.ConfigurationHolder
 import org.pih.warehouse.core.MailService
+import org.pih.warehouse.jobs.DataCleaningJob
 import org.springframework.web.multipart.MultipartFile
 import util.ClickstreamUtil
+
+import javax.print.Doc
+import javax.print.DocFlavor
+import javax.print.DocPrintJob
+import javax.print.PrintService
+import javax.print.SimpleDoc
+import javax.print.attribute.Attribute
+import java.awt.print.PrinterJob
 
 //import java.net.HttpURLConnection;
 //import java.net.URLConnection;
@@ -32,7 +41,7 @@ class AdminController {
 	MailService mailService;
 	def grailsApplication
 	def config = ConfigurationHolder.config
-
+    def quartzScheduler
 
 
 	def index = { }
@@ -198,6 +207,32 @@ class AdminController {
 		chain(action: "showUpgrade", model: [command : command])
 		//redirect (view: "showUpgrade", model: [command: command])
 	}
+
+
+	def testZebraPrinter = {
+        try {
+
+            PrintService[] printServices = PrinterJob.lookupPrintServices();
+            //PrinterJob
+            DocPrintJob job = psZebra.createPrintJob();
+
+            String s = "N" + "\n" +
+                    "q305" + "\n" +
+                    "Q203,26" + "\n" +
+                    "B55,26,0,1,2,2,152,B,\"" + code + "\"" + "\n" +
+                    "P1,1";
+
+            InputStream inputStream = new ByteArrayInputStream(s.getBytes());
+            DocFlavor flavor = DocFlavor.INPUT_STREAM.AUTOSENSE;
+            Doc doc = new SimpleDoc(inputStream, flavor, null);
+
+            job.print(doc, null);
+            inputStream.close();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+	}
+
 	
 	def showSettings = { 		
 		def externalConfigProperties = []
@@ -214,8 +249,12 @@ class AdminController {
 				log.warn("Properties file not found: " + e.message)
 			}
 		}
-			
+
+		PrintService[] printServices = PrinterJob.lookupPrintServices();
+
 		[
+            quartzScheduler:quartzScheduler,
+			printServices:printServices,
 			externalConfigProperties: externalConfigProperties,
 			systemProperties : System.properties,
 			env: GrailsUtil.environment,

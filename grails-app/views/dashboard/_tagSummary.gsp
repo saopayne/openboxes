@@ -32,8 +32,8 @@
         <warehouse:message code="tags.label" default="Tags"/>
     </h2>
 
-	<div class="widget-content">
-        <div id="tag-summary">
+	<div class="widget-content" style="max-height: 300px; overflow: auto;" >
+        <div id="tag-summary" >
             <g:if test="${params.editTags}">
                 <g:isUserAdmin>
                     <table>
@@ -76,6 +76,15 @@
                                     ${tag.key.tag?:"Empty tag" } (${tag?.value })</g:link>
                             </g:if>
                         </g:each>
+                        <%--
+                        <g:each in="${tags }" var="tag">
+                            <g:if test="${tag?.products?.size() > 1}">
+                                <g:link controller="inventory" action="browse" params="['tags':tag.id]" rel="${tag?.products?.size() }">
+                                    ${tag.tag?:"Empty tag" } (${tag?.products?.size() })</g:link>
+                            </g:if>
+                        </g:each>
+                        --%>
+
                     </div>
                 </g:if>
                 <g:else>
@@ -129,8 +138,8 @@
     $(window).load(function(){
         $("#tagcloud a").tagcloud({
             size: {
-                start:1.2,
-                end: 1.5,
+                start:1.0,
+                end: 2.0,
                 unit: 'em'
             },
             color: {

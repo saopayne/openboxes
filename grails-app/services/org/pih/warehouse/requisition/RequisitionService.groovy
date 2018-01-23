@@ -153,8 +153,8 @@ class RequisitionService {
     /**
      * Get requisition template
      */
-    def getAllRequisitionTemplates(Location destination) {
-        return getRequisitions(new Requisition(destination:destination, isTemplate: true), [max: -1, offset: 0])
+    def getAllRequisitionTemplates(Requisition requisition, Map params) {
+        return getRequisitions(requisition, params)
     }
 
     def getAllRequisitions(Location destination) {
@@ -341,7 +341,7 @@ class RequisitionService {
      * @param comments
      * @return
      */
-	def issueRequisition(Requisition requisition, String comments) {
+	def issueRequisition(Requisition requisition, User issuedBy, String comments) {
 		
 		// Make sure a transaction has not already been created for this requisition
 		def outboundTransaction = Transaction.findByRequisition(requisition)
@@ -362,21 +362,10 @@ class RequisitionService {
 			// requisition inventory is the location where the requisition is placed
 			outboundTransaction.inventory = requisition?.destination?.inventory
 			outboundTransaction.comment = comments
+            //outboundTransaction.createdBy = issuedBy
 			outboundTransaction.transactionType = TransactionType.get(Constants.TRANSFER_OUT_TRANSACTION_TYPE_ID)
 		}
-		
-		// where the requisition came from is where the stock will be sent
-		//if (!requisition.origin) { 
-		//	outboundTransaction.errors.reject("Must have to location")
-		//	throw new ValidationException("Cannot complete inventory transfer", outboundTransaction.errors)
-		//}
-		// where the requisition was processed is where the stock will be sent from
-		//if (!requisition?.destination) { 
-		//	outboundTransaction.errors.reject("Must have from location")
-		//	throw new ValidationException("Cannot complete inventory transfer", outboundTransaction.errors)
-		//}
-		
-		
+
 		def picklist = Picklist.findByRequisition(requisition)
 		if (picklist) {			
 			picklist.picklistItems.each { picklistItem ->				
@@ -393,6 +382,8 @@ class RequisitionService {
 			}
 			else {
 				requisition.status = RequisitionStatus.ISSUED
+                requisition.dateIssued = new Date();
+                requisition.issuedBy = issuedBy
 				requisition.save(flush:true) 
 			}
 	
@@ -409,17 +400,23 @@ class RequisitionService {
         try {
             if (requisition.status == RequisitionStatus.ISSUED) {
                 requisition.status = RequisitionStatus.CHECKING
-                try {
-                    requisition.transactions.each {
-                        if (it.localTransfer) {
-                            it.localTransfer.delete()
+                requisition.issuedBy = null
+                requisition.dateIssued = null
+                requisition.transactions*.id.each { transactionId ->
+                    def transaction = Transaction.load(transactionId)
+                    if (transaction) {
+                        requisition.removeFromTransactions(transaction)
+                        if (transaction.localTransfer) {
+                            transaction.localTransfer.destinationTransaction = null
+                            transaction.localTransfer.sourceTransaction = null
+                            transaction?.localTransfer?.delete()
                         }
-                        it.delete();
+                        transaction.delete();
                     }
-                } catch (Exception e) {
-                    throw new RuntimeException(e)
                 }
+                requisition.save()
             }
+            // FIXME We actually need status history so we can rollback to the correct status here
             else if (requisition.status == RequisitionStatus.CANCELED) {
                 requisition.status = RequisitionStatus.PENDING
             }
@@ -435,7 +432,7 @@ class RequisitionService {
             else if (requisition.status == RequisitionStatus.EDITING) {
                 requisition.status = RequisitionStatus.CREATED
             }
-            requisition.save()
+            requisition.save(flush:true)
 
         } catch (Exception e) {
             throw new RuntimeException(e)

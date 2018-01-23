@@ -73,7 +73,13 @@ class DashboardController {
 			redirect(controller: "inventoryItem", action: "showStockCard", id: product.id)
 			return;
 		}
-		
+
+		def inventoryItem = InventoryItem.findByLotNumber(params.searchTerms)
+		if (inventoryItem) {
+			redirect(controller: "inventoryItem", action: "showStockCard", id: inventoryItem?.product?.id)
+			return;
+		}
+
 		def requisition = Requisition.findByRequestNumber(params.searchTerms)
 		if (requisition) {
 			redirect(controller: "requisition", action: "show", id: requisition.id)
@@ -333,15 +339,20 @@ class DashboardController {
         def user = User.get(session?.user?.id)
         def location = Location.get(session?.warehouse?.id)
 
-      //   def startTime = System.currentTimeMillis()
+		//def startTime = System.currentTimeMillis()
 
-        // Shipments
-		def incomingShipments = Shipment.findAllByDestination(location).groupBy{it.status.code}.sort()
+        // Inbound Shipments
+		def incomingShipments = Shipment.findAllByDestinationAndCurrentStatusIsNotNull(location);
+        incomingShipments = incomingShipments?.groupBy{ it?.currentStatus }?.sort()
         def incomingShipmentsCount = Shipment.countByDestination(location)
 
-		def outgoingShipments = Shipment.findAllByOrigin(location).groupBy{it.status.code}.sort();
+
+		// Outbound Shipments
+		def outgoingShipments = Shipment.findAllByOriginAndCurrentStatusIsNotNull(location)
+        outgoingShipments = outgoingShipments?.groupBy{it?.currentStatus}?.sort()
         def outgoingShipmentsCount = Shipment.countByOrigin(location)
-        // Orders
+
+		// Orders
 		def incomingOrders = Order.executeQuery('select o.status, count(*) from Order as o where o.destination = ? group by o.status', [location])
 
         // Requisitions
@@ -392,10 +403,18 @@ class DashboardController {
 			quickCategories:productService.getQuickCategories()]
 	}
 
-    @CacheFlush(["dashboardCache", "megamenuCache"])
+    @CacheFlush(["dashboardCache", "megamenuCache", "inventoryBrowserCache", "fastMoversCache",
+			"binLocationReportCache", "binLocationSummaryCache", "quantityOnHandCache", "selectTagCache",
+			"selectTagsCache", "selectCategoryCache"])
     def flushCache = {
-        flash.message = "Cache has been flushed"
+        flash.message = "All data caches have been flushed"
         CalculateQuantityJob.triggerNow([locationId: session.warehouse.id])
+        redirect(action: "index")
+    }
+
+    @CacheFlush(["megamenuCache"])
+    def flushMegamenu = {
+        flash.message = "${g.message(code:'dashboard.cacheFlush.message', args: [g.message(code: 'dashboard.megamenu.label')])}"
         redirect(action: "index")
     }
 
@@ -428,11 +447,9 @@ class DashboardController {
 			// Save the warehouse selection for "last logged into" information
 			if (session.user) {
 				def userInstance = User.get(session.user.id);
-				userInstance.rememberLastLocation = Boolean.valueOf(params.rememberLastLocation)
+				//userInstance.rememberLastLocation = Boolean.valueOf(params.rememberLastLocation)
 				userInstance.lastLoginDate = new Date();
-				if (userInstance.rememberLastLocation) { 
-					userInstance.warehouse = warehouse 
-				}
+				userInstance.warehouse = warehouse
 				userInstance.save(flush:true);
 				session.user = userInstance;
 			}			
@@ -462,7 +479,18 @@ class DashboardController {
     def downloadGenericProductSummaryAsCsv = {
         def location = Location.get(session?.warehouse?.id)
         def genericProductSummary = inventoryService.getGenericProductSummary(location)
-        def data = (params.status == "ALL") ? genericProductSummary.values().flatten() : genericProductSummary[params.status]
+
+        def data = (params.status == "ALL") ?
+                genericProductSummary.values().flatten() :
+                genericProductSummary[params.status]
+
+		// Rename columns and filter out debugging columns
+		data = data.collect { ["Status":it.status,
+							   "Generic Product":it.name,
+							   "Minimum Qty":it.minQuantity,
+							   "Reorder Qty":it.reorderQuantity,
+							   "Maximum Qty":it.maxQuantity,
+							   "Available Qty":it.currentQuantity]}
 
         def sw = new StringWriter()
         if (data) {

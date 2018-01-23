@@ -9,6 +9,7 @@
 **/ 
 package org.pih.warehouse
 
+import grails.plugin.springcache.annotations.Cacheable
 import org.pih.warehouse.core.Location
 import org.pih.warehouse.core.Person
 import org.pih.warehouse.core.ReasonCode
@@ -18,6 +19,7 @@ import org.pih.warehouse.inventory.Inventory
 import org.pih.warehouse.inventory.InventoryItem
 import org.pih.warehouse.product.Product
 import org.pih.warehouse.product.Category
+import org.pih.warehouse.requisition.Requisition
 import org.pih.warehouse.requisition.RequisitionStatus;
 import org.codehaus.groovy.grails.commons.DomainClassArtefactHandler
 import org.pih.warehouse.requisition.CommodityClass
@@ -30,7 +32,9 @@ class SelectTagLib {
 	
 	def locationService
 	def shipmentService
+    def requisitionService
 
+    @Cacheable("selectCategoryCache")
     def selectCategory = { attrs, body ->
         attrs.from = Category.list().sort() // { it.name }
         attrs.optionKey = "id"
@@ -43,11 +47,11 @@ class SelectTagLib {
 
     def selectInventoryItem = { attrs, body ->
 
+        println "attrs.product = " + attrs.product
         attrs.from = InventoryItem.findAllByProduct(attrs.product)
         attrs.optionKey = "id"
         attrs.optionValue = { it.lotNumber }
         out << g.select(attrs)
-
     }
 
 
@@ -74,16 +78,17 @@ class SelectTagLib {
         out << g.select(attrs)
     }
 
-
+    @Cacheable("selectTagCache")
     def selectTag = { attrs, body ->
         def tags = Tag.list(sort:"tag").collect { [ id: it.id, name: it.tag, productCount: it?.products?.size() ]}
-        log.info tags
         attrs.from = tags
         attrs.value = attrs.value
         attrs.optionKey = "id"
         attrs.optionValue = { it.name + " (" + it.productCount + ")" }
         out << g.select(attrs)
     }
+
+    @Cacheable("selectTagsCache")
     def selectTags = { attrs, body ->
         def tags = Tag.list(sort:"tag").collect { [ id: it.id, name: it.tag, productCount: it?.products?.size() ]}
         attrs.from = tags
@@ -98,6 +103,17 @@ class SelectTagLib {
     def selectRequisitionStatus = { attrs, body ->
         attrs.from = RequisitionStatus.list()
         attrs.optionValue = { it?.name() }
+        out << g.select(attrs)
+    }
+
+    def selectRequisitionTemplate = { attrs, body ->
+        def requisitionCriteria = new Requisition(isTemplate: true)
+        requisitionCriteria.destination = session.warehouse
+        def requisitionTemplates = requisitionService.getAllRequisitionTemplates(requisitionCriteria, [:])
+        requisitionTemplates.sort { it.origin.name }
+        attrs.from = requisitionTemplates
+        attrs.optionKey = "id"
+        attrs.optionValue = { it.name + " - " + it.origin.name + " (" + format.metadata(obj:it?.commodityClass) + ")" }
         out << g.select(attrs)
 
     }
@@ -249,6 +265,14 @@ class SelectTagLib {
 
     }
 
+    def selectBinLocation = { attrs, body ->
+        def currentLocation = Location.get(session?.warehouse?.id)
+        attrs.from = Location.findAllByParentLocationAndActive(currentLocation, true).sort { it?.name?.toLowerCase() };
+        attrs.optionKey = 'id'
+        attrs.optionValue = 'name'
+        out << g.select(attrs)
+    }
+
 	
 	def selectLocation = { attrs,body ->
 
@@ -306,12 +330,19 @@ class SelectTagLib {
 
 	def selectRequestOrigin = { attrs,body ->
 		def currentLocation = Location.get(session?.warehouse?.id)
-		attrs.from = locationService.getRequestOrigins(currentLocation).sort { it?.name?.toLowerCase() };
-		attrs.optionKey = 'id'
-		attrs.placeholder = attrs.placeholder
-		
+        def requisitionType = params?.type?RequisitionType.valueOf(params.type):null
+
+        log.info "requisition type: ${requisitionType}"
+        def origins = locationService.getNearbyLocations(currentLocation).sort { it?.name?.toLowerCase() }
+
+        // Remove current location
+        origins = origins.minus(currentLocation)
+
+        attrs.from = origins
+        attrs.optionKey = 'id'
+		//attrs.placeholder = attrs?.placeholder
 		//attrs.optionValue = 'name'
-		attrs.optionValue = { it.name + " [" + format.metadata(obj: it?.locationType) + "]"}
+		attrs.optionValue = { it?.name + " [" + format.metadata(obj: it?.locationType) + "]"}
 		out << g.select(attrs)
 	}
 
@@ -361,11 +392,21 @@ class SelectTagLib {
 
     def selectRequisitionType = { attrs, body ->
         attrs.from = RequisitionType.list()
-        //attrs.optionKey = 'id'
-        //attrs.optionValue = 'name'
-        attrs.optionValue = { format.metadata(obj: it)  }
+        attrs.optionValue = { it  }
         out << g.select(attrs)
     }
+
+    def selectTimezone = { attrs, body ->
+        def timezones = []
+        try {
+            timezones = TimeZone?.getAvailableIDs()?.sort()
+        } catch (Exception e) {
+            log.warn("No timezones available: " + e.message, e)
+        }
+        attrs.from = timezones
+        out << g.select(attrs)
+    }
+
 
 	/**
 	 * Generic select widget using optgroup.

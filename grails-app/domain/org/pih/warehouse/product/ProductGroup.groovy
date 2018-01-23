@@ -33,21 +33,23 @@ class ProductGroup implements Comparable, Serializable {
 	static mapping = {
 		id generator: 'uuid'
 		products joinTable: [name:'product_group_product', column: 'product_id', key: 'product_group_id']
+		category ignoreNotFound: true
 	}
 		
 	
 	static constraints = {
-		name(nullable:true)
-		description(nullable:false, blank: false, maxSize: 255)
+		name(nullable:false, blank: false, maxSize: 255)
+		category(nullable:true)
+		description(nullable:true)
 		//products validator: { products, productGroup ->
 		//	return products.every {  productGroup.category == it.category }
 		//}
 	}
 
-	String toString() { return "$description"; }
+	String toString() { return "$name"; }
 
 	int compareTo(obj) {
-		this.description <=> obj.description
+		this.name <=> obj.name
 	}
 
     @Override

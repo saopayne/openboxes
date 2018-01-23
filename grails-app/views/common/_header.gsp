@@ -14,7 +14,7 @@
 		    	<div id="loggedIn">
 					<ul>
                         <li>
-                            <g:globalSearch id="globalSearch" cssClass="globalSearch" name="searchTerms"
+                            <g:globalSearch id="globalSearch" cssClass="globalSearch" name="searchTerms" size="600"
                                             jsonUrl="${request.contextPath }/json/globalSearch"></g:globalSearch>
                         </li>
 					    <g:if test="${session.user}">
@@ -31,7 +31,8 @@
                             --%>
                             <li>
                                 <span class="action-menu" >
-                                    <button class="action-hover-btn button icon user big">
+                                    <button class="action-hover-btn button">
+                                        <img src="${resource(dir: 'images/icons/silk', file: 'user.png')}"/>
                                         <span id="username">${session?.user?.name}</span>
                                         <span id="userrole">[<g:userRole user="${session.user}"/>]</span>
 
@@ -99,9 +100,15 @@
                                             </li>
                                         </g:else>
                                         <li class="action-menu-item">
+                                            <g:link controller="dashboard" action="flushMegamenu" style="color: #666">
+                                                <img src="${resource(dir: 'images/icons/silk', file: 'arrow_refresh.png')}"/>
+                                                ${warehouse.message(code:'cache.flush.label', default: 'Refresh megamenu')}
+                                            </g:link>
+                                        </li>
+                                        <li class="action-menu-item">
                                             <g:link controller="dashboard" action="flushCache" style="color: #666">
                                                 <img src="${resource(dir: 'images/icons/silk', file: 'arrow_refresh.png')}"/>
-                                                ${warehouse.message(code:'cache.flush.label', default: 'Flush cache')}
+                                                ${warehouse.message(code:'cache.flush.label', default: 'Refresh all data caches')}
                                             </g:link>
                                         </li>
 
@@ -132,9 +139,9 @@
                                                                 <div id="tabs-${i}">
                                                                     <g:each var="warehouse" in="${entry.value.sort() }">
                                                                         <g:set var="targetUri" value="${(request.forwardURI - request.contextPath) + '?' + (request.queryString?:'') }"/>
-                                                                        <div class="left" style="margin: 1px; ">
-                                                                            <a class="button big icon pin" href='${createLink(controller: "dashboard", action:"chooseLocation", id: warehouse.id, params:['targetUri':targetUri])}'>
-                                                                                <format:metadata obj="${warehouse}"/>
+                                                                        <div class="left" style="margin: 2px; ">
+                                                                            <a class="button icon pin big" href='${createLink(controller: "dashboard", action:"chooseLocation", id: warehouse.id, params:['targetUri':targetUri])}'>
+                                                                                ${warehouse.name}
                                                                             </a>
                                                                         </div>
                                                                     </g:each>
@@ -204,8 +211,10 @@
                             </li>
                             <g:if test="${session?.warehouse}">
                                 <li>
-                                    <button class="warehouse-switch button icon pin big">
-                                        ${session?.warehouse?.name }</button>
+                                    <button class="warehouse-switch button">
+                                        <img src="${resource(dir: 'images/icons/silk', file: 'map.png')}" class="warehouse-switch"/>
+                                        ${session?.warehouse?.name }
+                                    </button>
                                 </li>
 
                             </g:if>
@@ -214,9 +223,8 @@
 
                         <li>
                             <span class="action-menu">
-                                <button class="action-hover-btn button icon comment big">
-                                    <warehouse:message code="default.support.label" default="Support"/>
-                                </button>
+
+                                <img src="${resource(dir: 'images/icons/silk', file: 'help.png')}" class="action-hover-btn"/>
                                 <ul class="actions" style="text-align:left;">
 
                                     <li class="action-menu-item">

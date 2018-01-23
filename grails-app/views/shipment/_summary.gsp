@@ -12,11 +12,13 @@
 							alt="${format.metadata(obj:shipmentInstance?.shipmentType)}" style="vertical-align: middle;" />
 					</g:else>
 				</td>
-                <td width="1%" class="middle">
-                    <div>
-                        <g:render template="../shipment/actions" />
-                    </div>
-                </td>
+				<g:if test="${actionName != 'showDetails'}">
+					<td width="1%" class="middle">
+						<div>
+							<g:render template="../shipment/actions" />
+						</div>
+					</td>
+				</g:if>
 				<td class="middle">
 
 					<div class="title">
@@ -24,10 +26,18 @@
 							New Shipment
 						</g:if>
 						<g:else>
+                            <small>${shipmentInstance?.shipmentNumber}</small>
 							<g:link controller="shipment" action="showDetails" id="${shipmentInstance?.id }">
-								<small>${shipmentInstance?.shipmentNumber}</small>
-								${shipmentInstance?.name}
-							</g:link>
+								${shipmentInstance?.name}</g:link>
+                            <small class="fade uppercase">
+                                <g:if test="${shipmentInstance?.origin?.id == session?.warehouse?.id}">
+                                    <g:message code="shipment.outbound.label" default="outbound"/>
+                                </g:if>
+                                <g:elseif test="${shipmentInstance?.destination?.id == session?.warehouse?.id}">
+                                    <g:message code="shipment.inbound.label" default="inbound"/>
+                                </g:elseif>
+                            </small>
+
 						</g:else>
 					</div>
 

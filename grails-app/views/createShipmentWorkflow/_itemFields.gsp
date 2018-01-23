@@ -2,6 +2,7 @@
 				<tr class="prop">
 					<td valign="top" class="name"><label><warehouse:message code="product.label" default="Product" /></label></td>                            
 					<td valign="top" class="value">
+                        ${item?.product?.productCode}
 						<format:product product="${item?.product}"/>
 						<g:hiddenField id="productId" name="product.id" value="${item?.product?.id }"/>
 					</td>
@@ -9,7 +10,12 @@
 				<tr class="prop">
 					<td valign="top" class="name"><label><warehouse:message code="inventoryItem.lotNumber.label" /></label></td>                            
 					<td valign="top" class="value">
-						${item?.lotNumber }
+						<g:if test="${item?.lotNumber}">
+							${item?.lotNumber }
+						</g:if>
+						<g:else>
+							<span class="fade">${g.message(code:'default.noLotNumber.label')}</span>
+						</g:else>
 						<g:hiddenField id="lotNumber" name="lotNumber" value="${item?.lotNumber }"/>
 					</td>
 				</tr>
@@ -18,7 +24,7 @@
 						<label><warehouse:message code="inventoryItem.expirationDate.label" /></label>
 					</td>                            
 					<td valign="top" class="value">
-						${item?.expirationDate?:warehouse.message(code:'default.never.label')}
+						${item?.expirationDate?:g.message(code:'default.never.label')}
 					</td>
 				</tr>
 				<tr class="prop">
@@ -32,7 +38,7 @@
 				<tr class="prop">
 					<td valign="top" class="name"><label><warehouse:message code="default.quantity.label" /></label></td>                            
 					<td valign="top" class="value">
-						<g:textField id="quantity" name="quantity" value="${item?.quantity}" size="5" class="text" /> 
+						<g:textField id="quantity" name="quantity" value="${item?.quantity}" size="10" class="text" />
 					</td>
 				</tr>  	        
 				<tr class="prop">
@@ -47,7 +53,7 @@
 					<td>
 						<div class="left">
 							<g:if test="${itemToEdit}">
-								<g:submitButton name="updateItem" value="${warehouse.message(code:'shipping.saveItem.label')}" class="button"></g:submitButton>
+								<g:submitButton name="updateShipmentItem" value="${warehouse.message(code:'shipping.saveItem.label')}" class="button"></g:submitButton>
 							</g:if>
 							<g:else>
 								<g:submitButton name="saveItem" value="${warehouse.message(code:'shipping.saveItem.label')}" class="button"></g:submitButton>

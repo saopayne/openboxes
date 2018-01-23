@@ -23,6 +23,20 @@ grails.config.locations = [
 	"file:${userHome}/.grails/${appName}-config.properties",
 	"file:${userHome}/.grails/${appName}-config.groovy"
 ]
+
+// Allow admin to override the config location using command line argument
+configLocation = System.properties["${appName}.config.location"]
+if (configLocation) {
+	grails.config.locations << "file:" + configLocation
+}
+
+// Allow admin to override the config location using environment variable
+configLocation = System.env["${appName.toString().toUpperCase()}_CONFIG_LOCATION"]
+if (configLocation) {
+    grails.config.locations << "file:" + configLocation
+}
+
+
 println "Using configuration locations ${grails.config.locations} [${GrailsUtil.environment}]"
 
 //grails.plugins.reloadConfig.files = []
@@ -46,7 +60,7 @@ grails {
 		// ${user.home}/openboxes-config.properties file 
 		enabled = true			
 		from = "info@openboxes.com"
-		prefix = "[OpenBoxes]" + "["+GrailsUtil.environment+"]"
+		prefix = "[OpenBoxes " + GrailsUtil.environment+"]"
 		host = "localhost"
 		port = "25"
 
@@ -116,12 +130,21 @@ grails.validateable.packages = [
 ]
 
 /* Default settings for emails sent through the SMTP appender  */
-mail.error.server = 'localhost'
-mail.error.port = 25
-mail.error.from = 'justin@openboxes.com'
+//mail.error.server = 'localhost'
+//mail.error.port = 25
+//mail.error.from = 'justin@openboxes.com'
+//mail.error.to = 'errors@openboxes.com'
+//mail.error.subject = '[OpenBoxes '+GrailsUtil.environment+']'
+//mail.error.debug = true
+mail.error.debug = false
 mail.error.to = 'errors@openboxes.com'
-mail.error.subject = '[OpenBoxes]['+GrailsUtil.environment+']'
-mail.error.debug = true
+mail.error.server = grails.mail.host
+mail.error.port = grails.mail.port
+mail.error.from = grails.mail.from
+mail.error.username = grails.mail.username
+mail.error.password = grails.mail.password
+mail.error.prefix = grails.mail.prefix
+
 
 // set per-environment serverURL stem for creating absolute links
 environments {
@@ -201,7 +224,7 @@ log4j = {
                 "Username: %X{username}%n" +
                 "Location: %X{location}%n" +
                 "Locale: %X{locale}%n" +
-				"IP address: %X{ipAddress} http://whatismyipaddress.com/ip/%X{ipAddress}%n" +
+				"IP address: %X{ipAddress}%n" +
 				"Request URI: %X{requestUri}%n" +
                 "Request URL: %X{requestUrl}%n" +
 				"Query string: %X{queryString}%n" +
@@ -215,7 +238,7 @@ log4j = {
 					name: 'smtp',
 					to: mail.error.to,
 					from: mail.error.from,
-					subject: mail.error.subject + " %m",
+					subject: mail.error.prefix + " %m",
 					threshold: Level.ERROR,
 					//SMTPHost: mail.error.server,
 					layout: pattern(conversionPattern: conversionPattern))
@@ -226,11 +249,11 @@ log4j = {
 					name: 'smtp',
 					to: mail.error.to,
 					from: mail.error.from,
-					subject: mail.error.subject + " %m",
+					subject: mail.error.prefix + " %m",
 					threshold: Level.ERROR,
-					//SMTPHost: mail.error.server,
-					//SMTPUsername: mail.error.username,
-					//SMTPPassword: mail.error.password,
+					SMTPHost: mail.error.server,
+					SMTPUsername: mail.error.username,
+					SMTPPassword: mail.error.password,
 					SMTPDebug: mail.error.debug,
 					layout: pattern(conversionPattern: conversionPattern))
 			}
@@ -240,12 +263,12 @@ log4j = {
 					name: 'smtp',
 					to: mail.error.to,
 					from: mail.error.from,
-					subject: mail.error.subject + " An application error occurred",
+					subject: mail.error.prefix + " Application error occurred",
 					threshold: Level.ERROR,
-					//SMTPHost: mail.error.server,
-					//SMTPUsername: mail.error.username,
+					SMTPHost: mail.error.server,
+					SMTPUsername: mail.error.username,
 					SMTPDebug: mail.error.debug,
-					//SMTPPassword: mail.error.password,
+					SMTPPassword: mail.error.password,
 					layout: pattern(conversionPattern: conversionPattern))
 			}
 
@@ -419,11 +442,35 @@ jqueryValidationUi {
 }
 
 
+// Allow users to customize logo image url as well as labale
+openboxes.logo.url = ""
+openboxes.logo.label = "OpenBoxes"
+
 // Grails Sentry/Raven plugin
 // NOTE: You'll need to enable the plugin and set a DSN using an external config properties file
 // (namely, openboxes-config.properties or openboxes-config.groovy)
 grails.plugins.raven.active = false
 grails.plugins.raven.dsn = "https://{PUBLIC_KEY}:{SECRET_KEY}@app.getsentry.com/{PROJECT_ID}"
+
+// Dashboard configuration to indicate whether widgets are enabled/disabled
+openboxes.dashboard.requisitionItemSummary.enabled=true
+openboxes.dashboard.requisitionSummary.enabled=true
+openboxes.dashboard.receiptSummary.enabled=true
+openboxes.dashboard.shipmentSummary.enabled=true
+openboxes.dashboard.indicatorSummary.enabled=false
+openboxes.dashboard.valueSummary.enabled=false
+openboxes.dashboard.productSummary.enabled=true
+openboxes.dashboard.genericProductSummary.enabled=true
+openboxes.dashboard.binLocationSummary.enabled=true
+openboxes.dashboard.expiringSummary.enabled=true
+openboxes.dashboard.activitySummary.enabled=true
+openboxes.dashboard.tagSummary.enabled=true
+
+// Dashboard configuration to allow specific ordering of widgets (overrides enabled/disabled config)
+openboxes.dashboard.column1.widgets=["requisitionItemSummary","requisitionSummary","receiptSummary","shipmentSummary","indicatorSummary"]
+openboxes.dashboard.column2.widgets=["binLocationSummary","valueSummary","productSummary","genericProductSummary","expiringSummary"]
+openboxes.dashboard.column3.widgets=["activitySummary","tagSummary"]
+
 
 // Google analytics and feedback have been removed until I can improve performance.
 //google.analytics.enabled = false
@@ -463,6 +510,9 @@ openboxes.jobs.calculateHistoricalQuantityJob.enabled = false
 openboxes.jobs.calculateHistoricalQuantityJob.cronExpression = "0 * * * * ?" // every minute
 openboxes.jobs.calculateHistoricalQuantityJob.daysToProcess = 540   // 18 months
 
+// Data Cleaning Job
+openboxes.jobs.dataCleaningJob.cronExpression = "0 * * * * ?"       // every minute
+
 // LDAP configuration
 openboxes.ldap.enabled = false
 openboxes.ldap.context.managerDn = "cn=read-only-admin,dc=example,dc=com"
@@ -491,12 +541,15 @@ openboxes.stockCard.consumption.reasonCodes = [ ReasonCode.STOCKOUT, ReasonCode.
 
 // Localization configuration - default and supported locales
 openboxes.locale.defaultLocale = 'en'
-openboxes.locale.supportedLocales = ['en','fr','es']
+openboxes.locale.supportedLocales = ['ar', 'en', 'fr', 'de', 'it', 'es' , 'pt']
 
 // Currency configuration
 openboxes.locale.defaultCurrencyCode = "USD"
 openboxes.locale.defaultCurrencySymbol = "\$"
 //openboxes.locale.supportedCurrencyCodes = ["USD","CFA"]
+
+// Disable feature during development
+openboxes.shipping.splitPickItems.enabled = true
 
 // Grails doc configuration
 grails.doc.title = "OpenBoxes"
@@ -508,7 +561,10 @@ grails.doc.footer = ""
 
 // Added by the Joda-Time plugin:
 grails.gorm.default.mapping = {
-	"user-type" type: org.jadira.usertype.dateandtime.joda.PersistentDateMidnight, class: org.joda.time.DateMidnight
+    id generator:'uuid'
+	//cache true
+    dynamicUpdate true
+    "user-type" type: org.jadira.usertype.dateandtime.joda.PersistentDateMidnight, class: org.joda.time.DateMidnight
 	"user-type" type: org.jadira.usertype.dateandtime.joda.PersistentDateTime, class: org.joda.time.DateTime
 	"user-type" type: org.jadira.usertype.dateandtime.joda.PersistentDateTimeZoneAsString, class: org.joda.time.DateTimeZone
 	"user-type" type: org.jadira.usertype.dateandtime.joda.PersistentDurationAsString, class: org.joda.time.Duration

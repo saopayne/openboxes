@@ -29,7 +29,10 @@
                             <a href="#tabs-4" id="system-properties-tab"><warehouse:message code="admin.systemProperties.header"/></a>
                         </li>
                         <li>
-                            <a href="#tabs-5" id="job-settings-tab"><warehouse:message code="admin.jobSettings.header" default="Job Settings"/></a>
+                            <a href="#tabs-5" id="printers-tab"><warehouse:message code="admin.printers.header" default="Printers"/></a>
+                        </li>
+                        <li>
+                            <a href="#tabs-6" id="background-jobs-tab"><warehouse:message code="admin.backgroundJobs.header"/></a>
                         </li>
                     </ul>
                     <div id="tabs-1">
@@ -212,43 +215,118 @@
                         </table>
                     </div>
                     <div id="tabs-5">
-                        <table>
-                            <g:each var="externalProperty" in="${externalConfigProperties}" >
-                                <g:each var="property" in="${externalProperty}">
-                                    <g:if test="${property?.key?.contains('jobs')}">
-                                        <tr class="prop">
-                                            <td class="name">
-                                                <label>${property.key }</label>
-                                            </td>
-                                            <td class="value">
-                                                <g:if test="${property?.key?.contains('password') && property.value}">
-                                                    ${util.StringUtil.mask(property?.value, "*")}
-                                                </g:if>
-                                                <g:else>
-                                                    ${property.value }
-                                                </g:else>
-                                            </td>
-                                        </tr>
-                                    </g:if>
+                        <div class="box">
+                            <h2><g:message code="default.printers.label" default="Printers"/></h2>
+                            <table>
+                                <tr>
+                                    <th><g:message code="default.name.label"/></th>
+                                    <th><g:message code="printer.attributes.label" default="Attributes"/></th>
+                                    <th><g:message code="printer.supportedDocFlavors.label" default="Doc Flavors"/></th>
+                                    <th><g:message code="printer.supportedAttributeCategories.label" default="Attribute Categories"/></th>
+                                </tr>
+                                <g:each in="${printServices}" var="printService">
+                                    <tr class="prop">
+                                        <td>${printService.name}</td>
+                                        <td>
+                                            <table>
+                                                <g:each var="attribute" in="${printService.attributes.toArray()}">
+                                                    <tr>
+                                                        <td>
+                                                            <label>${attribute.name}</label>
+                                                        </td>
+                                                        <td>
+                                                            ${attribute}
+                                                        </td>
+                                                    </tr>
+                                                </g:each>
+                                            </table>
+                                        </td>
+                                        <td>
+                                            <div style="overflow: auto; max-height: 200px;">
+                                                <table>
+                                                    <g:each var="supportedDocFlavor" in="${printService.supportedDocFlavors}">
+                                                        <tr>
+                                                            <td>${supportedDocFlavor.mimeType}</td>
+                                                        </tr>
+                                                    </g:each>
+                                                </table>
+                                            </div>
+                                        </td>
+                                        <td>
+                                            <table>
+                                                <g:each var="supportedAttributeCategory" in="${printService.supportedAttributeCategories}">
+                                                    <tr>
+                                                        <td>
+                                                            ${supportedAttributeCategory.name}
+                                                        </td>
+                                                        <td>
+                                                            ${printService.getDefaultAttributeValue(supportedAttributeCategory)}
+                                                        </td>
+                                                    </tr>
+                                                </g:each>
+                                            </table>
+                                        </td>
+                                    </tr>
                                 </g:each>
-                            </g:each>
+                            </table>
+                        </div>
+                    </div>
 
 
-                            <tr class="prop">
-                                <td class="name">
-                                    <label>
-                                        <warehouse:message code="admin.calculateHistoricalQuantityJob.status" default="Calculate Historical Quantity Job Status"></warehouse:message>
-                                    </label>
-                                </td>
-                                <td class="value">
-                                    <span id="jobStatus">unknown</span>
-                                    <g:remoteLink class="button" controller="json" action="statusCalculateHistoricalQuantityJob" update="jobStatus">Show Status</g:remoteLink>
-                                    <g:remoteLink class="button" controller="json" action="enableCalculateHistoricalQuantityJob">Enable</g:remoteLink>
-                                    <g:remoteLink class="button" controller="json" action="disableCalculateHistoricalQuantityJob">Disable</g:remoteLink>
+                    <div id="tabs-6">
 
-                                </td>
-                            </tr>
-                        </table>
+                        <div class="box">
+
+                            <h2> ${quartzScheduler.schedulerName} ${quartzScheduler.schedulerInstanceId}</h2>
+                            <div class="message">
+                                <pre>${quartzScheduler.metaData}</pre>
+                            </div>
+
+                            <table>
+                                <g:each var="externalProperty" in="${externalConfigProperties}" >
+                                    <g:each var="property" in="${externalProperty}">
+                                        <g:if test="${property?.key?.contains('jobs')}">
+                                            <tr class="prop">
+                                                <td class="name">
+                                                    <label>${property.key }</label>
+                                                </td>
+                                                <td class="value">
+                                                    <g:if test="${property?.key?.contains('password') && property.value}">
+                                                        ${util.StringUtil.mask(property?.value, "*")}
+                                                    </g:if>
+                                                    <g:else>
+                                                        ${property.value }
+                                                    </g:else>
+                                                </td>
+                                            </tr>
+                                        </g:if>
+                                    </g:each>
+                                </g:each>
+
+
+                                <tr class="prop">
+                                    <td class="name">
+                                        <label>
+                                            <warehouse:message code="admin.calculateHistoricalQuantityJob.status" default="Calculate Historical Quantity Job Status"></warehouse:message>
+                                        </label>
+                                    </td>
+                                    <td class="value">
+                                        <span id="jobStatus">unknown</span>
+                                        <g:remoteLink class="button" controller="json" action="statusCalculateHistoricalQuantityJob" update="jobStatus">Show Status</g:remoteLink>
+                                        <g:remoteLink class="button" controller="json" action="enableCalculateHistoricalQuantityJob">Enable</g:remoteLink>
+                                        <g:remoteLink class="button" controller="json" action="disableCalculateHistoricalQuantityJob">Disable</g:remoteLink>
+
+                                    </td>
+                                </tr>
+                            </table>
+
+
+                            <div class="buttons">
+                                <g:link controller="jobs" action="index" class="button">${g.message(code:'backgroundJobs.label', default: 'Background Jobs')}</g:link>
+                            </div>
+
+                        </div>
+
                     </div>
                 </div>
             </div>
